@@ -14,6 +14,7 @@ import (
 
 func Start() {
 	router := mux.NewRouter()
+	router.Use(accessControlMiddleware)
 	dbClient := getDbClient()
 	authRepo := dbhandler.NewAuthRepository(dbClient)
 	authHand := AuthHandlers{service.NewAuthService(authRepo)}
@@ -30,6 +31,18 @@ func Start() {
 	port := "8000"
 	server := fmt.Sprintf("%s:%s", address, port)
 	log.Fatal(http.ListenAndServe(server, router))
+}
+
+func accessControlMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS,PUT")
+		w.Header().Set("Access-Control-Allow-Headers", "Origin, Content-Type")
+		if r.Method == "OPTIONS" {
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
 }
 func getDbClient() *mgo.Database {
 	session, err := mgo.Dial("mongodb://localhost")

@@ -24,6 +24,9 @@ type DefaultAuthService struct {
 }
 
 func (s DefaultAuthService) ResetPassword(req dto.PasswordReset, evpw, url_email string) *errs.AppError {
+	if req.Email == "" || req.NewPassword == "" || req.ConfirmPassword == "" {
+		return errs.NewUnexpectedError("enter all required fields")
+	}
 	err := s.repo.ResetPassword(evpw, url_email, req.Email, req.NewPassword, req.ConfirmPassword)
 	if err != nil {
 		return err
@@ -32,6 +35,9 @@ func (s DefaultAuthService) ResetPassword(req dto.PasswordReset, evpw, url_email
 }
 
 func (s DefaultAuthService) Recover(req dto.RecoverRequest) *errs.AppError {
+	if req.Email == "" {
+		return errs.NewUnexpectedError("enter email")
+	}
 	err := s.repo.RecoverEmail(req.Email)
 	if err != nil {
 		return err
@@ -58,6 +64,9 @@ func (s DefaultAuthService) Refresh(request dto.RefreshTokenRequest) (*dto.Login
 	return nil, errs.NewAuthenticationError("cannot generate a new access token until the current one expires")
 }
 func (s DefaultAuthService) VerifyEmail(req dto.EmailVerifyCode) *errs.AppError {
+	if strconv.Itoa(req.Code) == "" || req.Email == "" {
+		return errs.NewUnexpectedError("enter all required fields")
+	}
 	verify := domain.VerifyEmail{
 		Email: req.Email,
 		Code:  strconv.Itoa(req.Code),
@@ -69,6 +78,9 @@ func (s DefaultAuthService) VerifyEmail(req dto.EmailVerifyCode) *errs.AppError 
 	return nil
 }
 func (s DefaultAuthService) VerifyMobile(req dto.MobileVerifyCode) *errs.AppError {
+	if strconv.Itoa(req.Code) == "" || req.Mobile == "" {
+		return errs.NewUnexpectedError("enter all required fields")
+	}
 	verify := domain.VerifyMobile{
 		Contact_No: req.Mobile,
 		Code:       strconv.Itoa(req.Code),

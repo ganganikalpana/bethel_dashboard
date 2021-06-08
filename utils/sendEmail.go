@@ -10,8 +10,8 @@ import (
 )
 
 func SendEmail(code string, email, name string) *errs.AppError {
-	from := "kniluwathsala@gmail.com"
-	password := "rcaoznpcmmfcnqrp"
+	from := "testemsender@gmail.com"
+	password := "ozkutuftwtsfmlxa"
 	toEmail := email
 	to := []string{toEmail}
 	host := "smtp.gmail.com"

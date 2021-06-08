@@ -1,7 +1,6 @@
 package app
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 
@@ -27,10 +26,10 @@ func Start() {
 	router.HandleFunc("/auth/recoveraccount", authHand.recoverAccount).Methods(http.MethodPost)
 	router.HandleFunc("/auth/resetpassword/{email}/{evpw}", authHand.resetPassword).Methods(http.MethodPost)
 
-	address := "localhost"
-	port := "8000"
-	server := fmt.Sprintf("%s:%s", address, port)
-	log.Fatal(http.ListenAndServe(server, router))
+	// address := "localhost"
+	// port := "8000"
+	// server := fmt.Sprintf("%s:%s", address, port)
+	log.Fatal(http.ListenAndServe(":8000", router))
 }
 
 func accessControlMiddleware(next http.Handler) http.Handler {

@@ -76,7 +76,7 @@ func (d AuthRepositoryDb) ResetPassword(evpw, url_email, email, newpw, confirmpw
 func (d AuthRepositoryDb) RecoverEmail(email string) *errs.AppError {
 	now := time.Now()
 	timeout := now.Add(time.Minute * 45)
-	ifEx, err := d.findIfEmailExists(email)
+	ifEx, _ := d.findIfEmailExists(email)
 	if ifEx == true {
 		newCode := utils.GenerateCode()
 
@@ -98,7 +98,8 @@ func (d AuthRepositoryDb) RecoverEmail(email string) *errs.AppError {
 		}
 		return nil
 	} else {
-		return err.AsMessage()
+
+		return errs.NewUnexpectedError("email not found")
 	}
 }
 func (d AuthRepositoryDb) findIfEmailExists(email string) (bool, *errs.AppError) {

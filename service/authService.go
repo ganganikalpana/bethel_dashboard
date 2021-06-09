@@ -4,6 +4,7 @@ import (
 	"strconv"
 
 	"github.com/dgrijalva/jwt-go"
+	az "github.com/niluwats/bethel_dashboard/azure_gosdk/quickstarts/deploy-vm"
 	"github.com/niluwats/bethel_dashboard/dbhandler"
 	"github.com/niluwats/bethel_dashboard/domain"
 	"github.com/niluwats/bethel_dashboard/dto"
@@ -18,11 +19,25 @@ type AuthService interface {
 	VerifyMobile(request dto.MobileVerifyCode) *errs.AppError
 	Recover(request dto.RecoverRequest) *errs.AppError
 	ResetPassword(request dto.PasswordReset, evpw, url_email string) *errs.AppError
+	CreateNode(request dto.NewNodeRequest) (*domain.Organization, *errs.AppError)
 }
 type DefaultAuthService struct {
 	repo dbhandler.AuthRepository
 }
 
+func (s DefaultAuthService) CreateNode(req dto.NewNodeRequest) (*domain.Organization, *errs.AppError) {
+	if req.OrgName == "" || req.NodeDeployment == "" || req.NodeIp == "" || req.NodeNIC == "" || req.NodeName == "" || req.ResGroup == "" || req.Region == "" {
+		return nil, errs.NewUnexpectedError("enter all required fields")
+	}
+	vmDet := az.AssignMaps(req)
+	resp, err := s.repo.SaveNode(*vmDet)
+
+	if err != nil {
+		return nil, err
+	}
+	
+	return resp, nil
+}
 func (s DefaultAuthService) ResetPassword(req dto.PasswordReset, evpw, url_email string) *errs.AppError {
 	if req.Email == "" || req.NewPassword == "" || req.ConfirmPassword == "" {
 		return errs.NewUnexpectedError("enter all required fields")

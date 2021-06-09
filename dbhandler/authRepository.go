@@ -23,12 +23,68 @@ type AuthRepository interface {
 	VerifyMobileNo(verify domain.VerifyMobile) *errs.AppError
 	RecoverEmail(email string) *errs.AppError
 	ResetPassword(evpw, url_email, email, newpw, confirmpw string) *errs.AppError
+	SaveNode(vm domain.VmAll) (*domain.Organization, *errs.AppError)
 }
 
 type AuthRepositoryDb struct {
 	client *mgo.Database
 }
 
+func (d AuthRepositoryDb) SaveNode(vm domain.VmAll) (*domain.Organization, *errs.AppError) {
+	vmLoginCred := domain.VmLogin{
+		VmName:     vm.VmName,
+		VmUserName: vm.VmPassword,
+		VmPassword: vm.VmPassword,
+		IpAdd:      vm.IpAdd,
+	}
+	resGrp := domain.ResourceGroup{
+		Name:   vm.ResGrpName,
+		Region: vm.Region,
+		LoginDet: []domain.VmLogin{
+			vmLoginCred,
+		},
+	}
+	org := domain.Organization{
+		OrgName:       vm.OrgName,
+		ResourceGroup: []domain.ResourceGroup{resGrp},
+	}
+
+	col := d.client.C("organizations")
+	var res domain.Organization
+
+	err := col.Find(bson.M{"org_name": vm.OrgName}).One(&res)
+	if err == mgo.ErrNotFound {
+		err = col.Insert(&org)
+		if err != nil {
+			logger.Error("error while inserting new resource group" + err.Error())
+			return nil, errs.NewUnexpectedError("unexpected DB error")
+		}
+	} else {
+		err = col.Find(bson.M{"org_name": vm.OrgName, "resourcegroup.resourcegroup_name": resGrp.Name}).One(&res)
+		if err == mgo.ErrNotFound {
+			pushQuery := bson.M{"resourcegroup": resGrp}
+			err1 := col.Update(bson.M{"org_name": vm.OrgName}, bson.M{"$addToSet": pushQuery})
+			if err1 != nil {
+				logger.Error("error while updating resource group array" + err1.Error())
+				return nil, errs.NewUnexpectedError("unexpected DB error")
+			}
+
+		} else {
+			pushQuery := bson.M{"resourcegroup.$.virtual_machine": vmLoginCred}
+			err1 := col.Update(bson.M{"org_name": vm.OrgName, "resourcegroup.resourcegroup_name": resGrp.Name}, bson.M{"$addToSet": pushQuery})
+			if err1 != nil {
+				logger.Error("error while updating resource group" + err1.Error())
+				return nil, errs.NewUnexpectedError("unexpected DB error")
+			}
+		}
+	}
+	err = col.Find(bson.M{"org_name": vm.OrgName}).One(&res)
+	if err != nil {
+		logger.Error("error while fetching organization" + err.Error())
+		return nil, errs.NewUnexpectedError("unexpected DB error")
+	}
+	return &res, nil
+}
 func (d AuthRepositoryDb) ResetPassword(evpw, url_email, email, newpw, confirmpw string) *errs.AppError {
 	email_verf_store := d.client.C("verification_code")
 

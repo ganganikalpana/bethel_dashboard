@@ -25,6 +25,7 @@ func Start() {
 	router.HandleFunc("/auth/refresh", authHand.refresh).Methods(http.MethodPost)
 	router.HandleFunc("/auth/recoveraccount", authHand.recoverAccount).Methods(http.MethodPost)
 	router.HandleFunc("/auth/resetpassword/{email}/{evpw}", authHand.resetPassword).Methods(http.MethodPost)
+	router.HandleFunc("/auth/nodes", authHand.createNode).Methods(http.MethodPost)
 
 	// address := "localhost"
 	// port := "8000"

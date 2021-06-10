@@ -216,7 +216,6 @@ func (d AuthRepositoryDb) VerifyMobileNo(verify domain.VerifyMobile) *errs.AppEr
 	}
 }
 func (d AuthRepositoryDb) VerifyEmail(verify domain.VerifyEmail) *errs.AppError {
-
 	ifSame := d.CheckIfEqualEmailCode(verify.Code, verify.Email)
 
 	if ifSame == true {
@@ -226,11 +225,11 @@ func (d AuthRepositoryDb) VerifyEmail(verify domain.VerifyEmail) *errs.AppError 
 
 		if err != nil {
 			logger.Error("error while updateing email verification status : " + err.Error())
-			return errs.NewUnexpectedError("unexpected database error")
+			return errs.NewUnexpectedError("unexpected DBs error")
 		}
 		return nil
 	} else {
-		return errs.NewUnexpectedError("verification code doesn't match")
+		return errs.NewUnexpectedError("error verifying email")
 	}
 }
 
@@ -270,21 +269,15 @@ func (d AuthRepositoryDb) SaveUser(user domain.User) (*domain.User, *errs.AppErr
 
 		code := utils.GenerateCode()
 		strCode := strconv.Itoa(code)
-		code_to_store := strCode
-		code_hash, errr := bcrypt.GenerateFromPassword([]byte(strCode), 10)
-		if errr != nil {
-			logger.Error("error while encrypting code :" + errr.Error())
-			return nil, errs.NewUnexpectedError("unexpected DB error")
-		}
-		fmt.Println(code_hash)
-		code_hashStr := string(code_hash)
-		fmt.Println(code_hashStr)
+
+		code_hashStr := utils.Encode(strCode)
+
 		err1 := d.SaveEmailVerificationCode(code_hashStr, user.Email)
 		if err1 != nil {
 			logger.Error("error while inserting code:" + err1.Message)
 			return nil, errs.NewUnexpectedError("unexpected DB error")
 		}
-		err2 := utils.SendEmail(code_to_store, user.Email, user.Prof.Firstame)
+		err2 := utils.SendEmail(code_hashStr, user.Email, "userreg")
 		if err2 != nil {
 			logger.Error("error while sending email - " + err2.Message)
 			return nil, errs.NewUnexpectedError("unexpected DB error")
@@ -392,20 +385,14 @@ func (d AuthRepositoryDb) SaveEmailVerificationCode(code string, em string) *err
 }
 func (d AuthRepositoryDb) CheckIfEqualEmailCode(code string, email string) bool {
 	var req domain.VerifyEmail
-
 	code_store := d.client.C("verification_code")
-	err := code_store.Find(bson.M{"email": email}).One(&req)
-	if err != nil {
-		logger.Error("Error while querying verification code: " + err.Error())
+	err := code_store.Find(bson.M{"email": email, "code": code}).One(&req)
+	fmt.Println(&req)
+	if err == mgo.ErrNotFound {
 		return false
+	} else {
+		return true
 	}
-	err1 := bcrypt.CompareHashAndPassword([]byte(req.Code), []byte(code))
-	if err1 != nil {
-		logger.Error("error while comparing verification codes : " + err.Error())
-		return false
-	}
-
-	return true
 }
 func (d AuthRepositoryDb) CheckIfEqualSmsCode(code string, mobile string) bool {
 	var req domain.VerifyMobile

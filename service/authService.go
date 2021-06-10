@@ -15,7 +15,7 @@ type AuthService interface {
 	Register(dto.NewUserRequest) (*domain.User, *errs.AppError)
 	Login(dto.NewLoginRequest) (*dto.LoginResponse, *errs.AppError)
 	Refresh(request dto.RefreshTokenRequest) (*dto.LoginResponse, *errs.AppError)
-	VerifyEmail(request dto.EmailVerifyCode) *errs.AppError
+	VerifyEmail(evpw, url_email string) *errs.AppError
 	VerifyMobile(request dto.MobileVerifyCode) *errs.AppError
 	Recover(request dto.RecoverRequest) *errs.AppError
 	ResetPassword(request dto.PasswordReset, evpw, url_email string) *errs.AppError
@@ -86,13 +86,11 @@ func (s DefaultAuthService) Refresh(request dto.RefreshTokenRequest) (*dto.Login
 	}
 	return nil, errs.NewAuthenticationError("cannot generate a new access token until the current one expires")
 }
-func (s DefaultAuthService) VerifyEmail(req dto.EmailVerifyCode) *errs.AppError {
-	if strconv.Itoa(req.Code) == "" || req.Email == "" {
-		return errs.NewUnexpectedError("enter all required fields")
-	}
+func (s DefaultAuthService) VerifyEmail(evpw, url_email string) *errs.AppError {
+
 	verify := domain.VerifyEmail{
-		Email: req.Email,
-		Code:  strconv.Itoa(req.Code),
+		Email: url_email,
+		Code:  evpw,
 	}
 	err := s.repo.VerifyEmail(verify)
 	if err != nil {

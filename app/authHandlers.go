@@ -76,18 +76,16 @@ func (h AuthHandlers) refresh(w http.ResponseWriter, r *http.Request) {
 	}
 }
 func (h AuthHandlers) verifyEmail(w http.ResponseWriter, r *http.Request) {
-	var request dto.EmailVerifyCode
-	err := json.NewDecoder(r.Body).Decode(&request)
-	if err != nil {
-		writeResponse(w, http.StatusBadRequest, err.Error())
+	vars := mux.Vars(r)
+	evpw := vars["evpw"]
+	url_email := vars["email"]
+	appErr := h.service.VerifyEmail(evpw, url_email)
+	if appErr != nil {
+		writeResponse(w, appErr.Code, appErr.Message)
 	} else {
-		appErr := h.service.VerifyEmail(request)
-		if appErr != nil {
-			writeResponse(w, appErr.Code, appErr.Message)
-		} else {
-			writeResponse(w, http.StatusCreated, "verified email successfully")
-		}
+		writeResponse(w, http.StatusCreated, "verified email successfully")
 	}
+
 }
 func (h AuthHandlers) verifyMobile(w http.ResponseWriter, r *http.Request) {
 	var request dto.MobileVerifyCode

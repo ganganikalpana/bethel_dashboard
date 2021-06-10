@@ -19,13 +19,12 @@ func SendEmail(code string, email, name string) *errs.AppError {
 	address := host + ":" + port
 	subject := ""
 	body := ""
-	if name != "" {
+	if name == "userreg" {
 		subject = "Subject:Email verification to signup\n\n\n"
-		body = name + ", Your verification code is " + code
+		body = fmt.Sprintf("http://13.76.156.32:8000/auth/users/verifyemail/%s/%s", email, code)
 	} else {
-		hashed_email := Encode(email)
 		subject = "Subject:Password reset link\n\n\n"
-		body = fmt.Sprintf("http://13.76.156.32:8000/auth/resetpassword/%s/%s", hashed_email, code)
+		body = fmt.Sprintf("http://13.76.156.32:8000/auth/resetpassword/%s/%s", Encode(email), code)
 	}
 	message := []byte(subject + body)
 	auth := smtp.PlainAuth("", from, password, host)

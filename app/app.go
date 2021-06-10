@@ -19,7 +19,7 @@ func Start() {
 	authHand := AuthHandlers{service.NewAuthService(authRepo)}
 
 	router.HandleFunc("/auth/users", authHand.newUser).Methods(http.MethodPost)
-	router.HandleFunc("/auth/users/verifyemail", authHand.verifyEmail).Methods(http.MethodPost)
+	router.HandleFunc("/auth/users/verifyemail/{email}/{evpw}", authHand.verifyEmail).Methods(http.MethodPost)
 	router.HandleFunc("/auth/users/verifymobile", authHand.verifyMobile).Methods(http.MethodPost)
 	router.HandleFunc("/auth/login", authHand.login).Methods(http.MethodPost)
 	router.HandleFunc("/auth/refresh", authHand.refresh).Methods(http.MethodPost)

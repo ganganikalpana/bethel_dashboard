@@ -1,5 +1,7 @@
 package dto
 
+import "github.com/niluwats/bethel_dashboard/domain"
+
 type NewNodeRequest struct {
 	OrgName        string `json:"organization"`
 	ResGroup       string `json:"resource_group"`
@@ -17,5 +19,12 @@ type NewNodeRequest struct {
 // }
 
 type NewNodesResponse struct {
-	ResGroup       string `json:"resource_group"`
+	ResGroup []domain.ResourceGroup `json:"resourcegroups"`
+}
+
+func ToDto(org *domain.Organization) *NewNodesResponse {
+	nodeResponse := NewNodesResponse{
+		ResGroup: org.ResourceGroup,
+	}
+	return &nodeResponse
 }

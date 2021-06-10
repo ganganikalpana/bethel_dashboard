@@ -16,6 +16,7 @@ import (
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/Azure/go-autorest/autorest/azure/auth"
 	"github.com/Azure/go-autorest/autorest/to"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/niluwats/bethel_dashboard/domain"
 	"github.com/niluwats/bethel_dashboard/dto"
 )
@@ -53,23 +54,6 @@ func AssignMaps(dtoMap dto.NewNodeRequest) *domain.VmAll {
 type mapCounter struct {
 	mc map[string]Value
 	sync.RWMutex
-}
-
-type VmLogin struct {
-	VmName     string `bson:"vm_name"`
-	VmUserName string `bson:"vm_username"`
-	VmPassword string `bson:"vm_password"`
-	IpAdd      string `bson:"vm_ip"`
-}
-type ResourceGroup struct {
-	Name     string    `bson:"resourcegroup_name"`
-	Region   string    `bson:"region"`
-	LoginDet []VmLogin `bson:"virtual_machine"`
-}
-
-type Organization struct {
-	OrgName       string          `bson:"org_name"`
-	ResourceGroup []ResourceGroup `bson:"resourcegroup"`
 }
 
 // Information loaded from the authorization file to identify the client
@@ -202,9 +186,6 @@ func getLogin(v *Value, mc *mapCounter) {
 		log.Fatalf("Unable to get IP information. Try using `az network public-ip list -g %s", resourceGroupName)
 	}
 
-	// vmUser := (*params)["vm_user"].(map[string]interface{})
-	// vmName := (*params)["virtualMachines_QuickstartVM_name"].(map[string]interface{})
-
 	vmUser := param["vm_user"].(map[string]interface{})
 	vmName := param["virtualMachines_QuickstartVM_name"].(map[string]interface{})
 
@@ -212,7 +193,6 @@ func getLogin(v *Value, mc *mapCounter) {
 		vmUser["value"].(string),
 		*ipAddress.PublicIPAddressPropertiesFormat.IPAddress,
 		clientData.VMPassword)
-
 	VmDetails = domain.VmAll{
 		OrgName:    organizationName,
 		ResGrpName: resourceGroupName,
@@ -222,6 +202,7 @@ func getLogin(v *Value, mc *mapCounter) {
 		IpAdd:      *ipAddress.IPAddress,
 		VmUserName: vmUser["value"].(string),
 	}
+	spew.Dump(VmDetails)
 }
 
 func readJSON(path string) (*map[string]interface{}, error) {

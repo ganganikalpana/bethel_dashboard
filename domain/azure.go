@@ -26,3 +26,8 @@ type VmAll struct {
 	VmPassword string `bson:"vm_password"`
 	IpAdd      string `bson:"vm_ip"`
 }
+
+type Location struct {
+	// ResourcrGroupName string `bson:"resourcegroup"`
+	Region string `bson:"region"`
+}

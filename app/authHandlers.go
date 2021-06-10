@@ -14,13 +14,13 @@ type AuthHandlers struct {
 	service service.AuthService
 }
 
-func (h AuthHandlers) createNode(w http.ResponseWriter, r *http.Request){
+func (h AuthHandlers) createNode(w http.ResponseWriter, r *http.Request) {
 	var req dto.NewNodeRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		logger.Error("Error while decoding create node request: " + err.Error())
 		w.WriteHeader(http.StatusBadRequest)
 	} else {
-		nodes,appErr := h.service.CreateNode(req)
+		nodes, appErr := h.service.CreateNode(req)
 		if appErr != nil {
 			writeResponse(w, appErr.Code, appErr.AsMessage())
 		} else {

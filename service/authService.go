@@ -19,24 +19,32 @@ type AuthService interface {
 	VerifyMobile(request dto.MobileVerifyCode) *errs.AppError
 	Recover(request dto.RecoverRequest) *errs.AppError
 	ResetPassword(request dto.PasswordReset, evpw, url_email string) *errs.AppError
-	CreateNode(request dto.NewNodeRequest) (*domain.Organization, *errs.AppError)
+	CreateNode(request dto.NewNodeRequest) (*dto.NewNodesResponse, *errs.AppError)
 }
 type DefaultAuthService struct {
 	repo dbhandler.AuthRepository
 }
 
-func (s DefaultAuthService) CreateNode(req dto.NewNodeRequest) (*domain.Organization, *errs.AppError) {
+func (s DefaultAuthService) CreateNode(req dto.NewNodeRequest) (*dto.NewNodesResponse, *errs.AppError) {
 	if req.OrgName == "" || req.NodeDeployment == "" || req.NodeIp == "" || req.NodeNIC == "" || req.NodeName == "" || req.ResGroup == "" || req.Region == "" {
 		return nil, errs.NewUnexpectedError("enter all required fields")
 	}
+	b, errr := s.repo.FindIfNodeExists(req.ResGroup, req.NodeName)
+	if errr != nil {
+		return nil, errr
+	}
+
+	if b == true {
+		return nil, errs.NewUnexpectedError("This node has already been registered under the given resource group")
+	}
+
 	vmDet := az.AssignMaps(req)
 	resp, err := s.repo.SaveNode(*vmDet)
-
+	nodeResp := dto.ToDto(resp)
 	if err != nil {
 		return nil, err
 	}
-	
-	return resp, nil
+	return nodeResp, nil
 }
 func (s DefaultAuthService) ResetPassword(req dto.PasswordReset, evpw, url_email string) *errs.AppError {
 	if req.Email == "" || req.NewPassword == "" || req.ConfirmPassword == "" {

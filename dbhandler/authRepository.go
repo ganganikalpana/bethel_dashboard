@@ -24,16 +24,27 @@ type AuthRepository interface {
 	RecoverEmail(email string) *errs.AppError
 	ResetPassword(evpw, url_email, email, newpw, confirmpw string) *errs.AppError
 	SaveNode(vm domain.VmAll) (*domain.Organization, *errs.AppError)
+	FindIfNodeExists(resgrp, vmname string) (bool, *errs.AppError)
 }
 
 type AuthRepositoryDb struct {
 	client *mgo.Database
 }
 
+func (d AuthRepositoryDb) FindIfNodeExists(resgrp, vmname string) (bool, *errs.AppError) {
+	var res domain.Organization
+	col := d.client.C("organizations")
+	err := col.Find(bson.M{"resourcegroup.resourcegroup_name": resgrp, "resourcegroup.virtual_machine.vm_name": vmname}).One(&res)
+	if err == mgo.ErrNotFound {
+		return false, nil
+	} else {
+		return true, nil
+	}
+}
 func (d AuthRepositoryDb) SaveNode(vm domain.VmAll) (*domain.Organization, *errs.AppError) {
 	vmLoginCred := domain.VmLogin{
 		VmName:     vm.VmName,
-		VmUserName: vm.VmPassword,
+		VmUserName: vm.VmUserName,
 		VmPassword: vm.VmPassword,
 		IpAdd:      vm.IpAdd,
 	}
@@ -48,15 +59,34 @@ func (d AuthRepositoryDb) SaveNode(vm domain.VmAll) (*domain.Organization, *errs
 		OrgName:       vm.OrgName,
 		ResourceGroup: []domain.ResourceGroup{resGrp},
 	}
+	loc := domain.Location{
+		Region: vm.Region,
+	}
+	var resLoc domain.Location
 
 	col := d.client.C("organizations")
+	col2 := d.client.C("resourcegroup_locations")
 	var res domain.Organization
+
+	err0 := col2.Find(bson.M{"region": loc.Region}).One(&resLoc)
+	if err0 == mgo.ErrNotFound {
+		err0 = col2.Insert(&loc)
+		if err0 != nil {
+			logger.Error("error while inserting new resourcegroup location" + err0.Error())
+			return nil, errs.NewUnexpectedError("unexpected DB error")
+		}
+	}
 
 	err := col.Find(bson.M{"org_name": vm.OrgName}).One(&res)
 	if err == mgo.ErrNotFound {
 		err = col.Insert(&org)
 		if err != nil {
 			logger.Error("error while inserting new resource group" + err.Error())
+			return nil, errs.NewUnexpectedError("unexpected DB error")
+		}
+		err = col2.Insert(&loc)
+		if err != nil {
+			logger.Error("error while inserting new region" + err.Error())
 			return nil, errs.NewUnexpectedError("unexpected DB error")
 		}
 	} else {

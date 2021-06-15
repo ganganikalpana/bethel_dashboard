@@ -25,6 +25,7 @@ type AuthRepository interface {
 	ResetPassword(evpw, url_email, email, newpw, confirmpw string) *errs.AppError
 	SaveNode(vm domain.VmAll) (*domain.Organization, *errs.AppError)
 	FindIfNodeExists(resgrp, vmname string) (bool, *errs.AppError)
+	SendMobileVerificationCode(mobile string) *errs.AppError
 }
 
 type AuthRepositoryDb struct {
@@ -198,6 +199,30 @@ func (d AuthRepositoryDb) findIfEmailExists(email string) (bool, *errs.AppError)
 		return true, errs.NewUnexpectedError("email not found")
 	}
 }
+
+func (d AuthRepositoryDb) SendMobileVerificationCode(mobile string) *errs.AppError {
+	code := utils.GenerateCode()
+	strCode := strconv.Itoa(code)
+	code_hash, err := bcrypt.GenerateFromPassword([]byte(strCode), 10)
+	if err != nil {
+		logger.Error("error while encrypting code :" + err.Error())
+		return errs.NewUnexpectedError("unexpected DB error")
+	}
+
+	strCode = string(code_hash)
+	err1 := d.SaveMobileVerificationCode(strCode, mobile)
+	if err1 != nil {
+		logger.Error("error while inserting sms verification code:")
+		return errs.NewUnexpectedError("unexpected DB error")
+	}
+
+	err2 := utils.SendSms(mobile, code)
+	if err2 != nil {
+		return errs.NewUnexpectedError("unexpected DB error")
+	}
+	return nil
+}
+
 func (d AuthRepositoryDb) VerifyMobileNo(verify domain.VerifyMobile) *errs.AppError {
 	ifSame := d.CheckIfEqualSmsCode(verify.Code, verify.Contact_No)
 
@@ -308,26 +333,6 @@ func (d AuthRepositoryDb) Login(email, password string) (*domain.Login, *errs.Ap
 	if login.IsEmailVerified == false {
 		logger.Error("email has not confirmed yet")
 		return nil, errs.NewUnexpectedError("email has not confirmed yet")
-	}
-
-	code := utils.GenerateCode()
-	strCode := strconv.Itoa(code)
-	code_hash, errr := bcrypt.GenerateFromPassword([]byte(strCode), 10)
-	if errr != nil {
-		logger.Error("error while encrypting code :" + errr.Error())
-		return nil, errs.NewUnexpectedError("unexpected DB error")
-	}
-
-	strCode = string(code_hash)
-	err1 := d.SaveMobileVerificationCode(strCode, login.Prof.Contact_No)
-	if err1 != nil {
-		logger.Error("error while inserting sms verification code:" + err.Error())
-		return nil, errs.NewUnexpectedError("unexpected DB error")
-	}
-
-	err2 := utils.SendSms(login.Prof.Contact_No, code)
-	if err2 != nil {
-		return nil, errs.NewUnexpectedError("unexpected DB error")
 	}
 	return &login, nil
 }

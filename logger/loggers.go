@@ -11,7 +11,6 @@ func init() {
 
 	var err error
 
-	//changing the default configuration of newproductionconfig
 	config := zap.NewProductionConfig()
 	encoderConfig := zap.NewProductionEncoderConfig()
 	encoderConfig.TimeKey = "timestamp"
@@ -19,7 +18,6 @@ func init() {
 	encoderConfig.StacktraceKey = ""
 	config.EncoderConfig = encoderConfig
 	log, err = config.Build(zap.AddCallerSkip(1))
-	// log, err = zap.NewProduction(zap.AddCallerSkip(1))
 	if err != nil {
 		panic(err)
 	}

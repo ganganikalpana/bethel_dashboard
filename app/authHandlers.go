@@ -3,6 +3,7 @@ package app
 import (
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/niluwats/bethel_dashboard/dto"
@@ -101,6 +102,20 @@ func (h AuthHandlers) verifyMobile(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 }
+func (h AuthHandlers) getMbVerificationCode(w http.ResponseWriter, r *http.Request) {
+	var request dto.NewMobileVerificationRequest
+	err := json.NewDecoder(r.Body).Decode(&request)
+	if err != nil {
+		writeResponse(w, http.StatusBadRequest, err.Error())
+	} else {
+		appErr := h.service.GetMobileVerificationCode(request)
+		if appErr != nil {
+			writeResponse(w, appErr.Code, appErr.Message)
+		} else {
+			writeResponse(w, http.StatusCreated, "sent mobile verification code")
+		}
+	}
+}
 func (h AuthHandlers) newUser(w http.ResponseWriter, r *http.Request) {
 	var request dto.NewUserRequest
 	err := json.NewDecoder(r.Body).Decode(&request)
@@ -125,6 +140,9 @@ func (h AuthHandlers) login(w http.ResponseWriter, r *http.Request) {
 		if appErr != nil {
 			writeResponse(w, appErr.Code, appErr.AsMessage())
 		} else {
+			expiration := time.Now().Add(30 * 24 * time.Hour)
+			cookie := http.Cookie{Name: "jwt", Value: *&token.AccessToken, Expires: expiration, HttpOnly: true}
+			http.SetCookie(w, &cookie)
 			writeResponse(w, http.StatusOK, *token)
 		}
 	}

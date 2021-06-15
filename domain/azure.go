@@ -28,6 +28,5 @@ type VmAll struct {
 }
 
 type Location struct {
-	// ResourcrGroupName string `bson:"resourcegroup"`
 	Region string `bson:"region"`
 }

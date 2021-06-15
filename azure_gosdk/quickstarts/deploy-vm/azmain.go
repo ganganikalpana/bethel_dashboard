@@ -178,7 +178,6 @@ func getLogin(v *Value, mc *mapCounter) {
 	param := Params(v, mc)
 	addressClient := network.NewPublicIPAddressesClient(clientData.SubscriptionID)
 	addressClient.Authorizer = authorizer
-	//ipName := (*params)["publicIPAddresses_QuickstartVM_ip_name"].(map[string]interface{})
 	ipName := param["publicIPAddresses_QuickstartVM_ip_name"].(map[string]interface{})
 
 	ipAddress, err := addressClient.Get(ctx, resourceGroupName, ipName["value"].(string), "")

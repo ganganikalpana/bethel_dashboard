@@ -12,12 +12,6 @@ type NewNodeRequest struct {
 	Region         string `json:"region"`
 }
 
-// type NewNodesRequest struct {
-// 	ResGroup string `json:"resource_group"`
-// 	Region   string `json:"region"`
-// 	NodesArr []NewNode
-// }
-
 type NewNodesResponse struct {
 	ResGroup []domain.ResourceGroup `json:"resourcegroups"`
 }

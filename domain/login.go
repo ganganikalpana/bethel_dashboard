@@ -13,7 +13,7 @@ type Login struct {
 	IsActivated      bool   `bson:"activated"`
 	IsEmailVerified  bool   `bson:"email_verified"`
 	IsMobileVerified bool   `bson:"mobile_verified"`
-	Prof Profile
+	Prof             Profile
 }
 
 func (l Login) ClaimsForAccessToken() AccessTokenClaims {

@@ -20,6 +20,7 @@ type AuthService interface {
 	Recover(request dto.RecoverRequest) *errs.AppError
 	ResetPassword(request dto.PasswordReset, evpw, url_email string) *errs.AppError
 	CreateNode(request dto.NewNodeRequest) (*dto.NewNodesResponse, *errs.AppError)
+	GetMobileVerificationCode(request dto.NewMobileVerificationRequest) *errs.AppError
 }
 type DefaultAuthService struct {
 	repo dbhandler.AuthRepository
@@ -85,6 +86,20 @@ func (s DefaultAuthService) Refresh(request dto.RefreshTokenRequest) (*dto.Login
 		return nil, errs.NewAuthenticationError("invalid token")
 	}
 	return nil, errs.NewAuthenticationError("cannot generate a new access token until the current one expires")
+}
+
+func (s DefaultAuthService) GetMobileVerificationCode(req dto.NewMobileVerificationRequest) *errs.AppError {
+	if req.Mobile == "" {
+		return errs.NewUnexpectedError("enter mobile number")
+	}
+	mbReq := dto.NewMobileVerificationRequest{
+		Mobile: req.Mobile,
+	}
+	err := s.repo.SendMobileVerificationCode(mbReq.Mobile)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 func (s DefaultAuthService) VerifyEmail(evpw, url_email string) *errs.AppError {
 
@@ -157,7 +172,7 @@ func (s DefaultAuthService) Login(req dto.NewLoginRequest) (*dto.LoginResponse, 
 	if accessToken, appErr = authToken.NewAccessToken(); appErr != nil {
 		return nil, appErr
 	}
-
+	
 	if refreshToken, appErr = s.repo.GenerateAndSaveRefreshTokenToStore(authToken); appErr != nil {
 		return nil, appErr
 	}

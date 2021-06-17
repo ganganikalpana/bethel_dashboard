@@ -23,7 +23,7 @@ type AuthRepository interface {
 	VerifyMobileNo(verify domain.VerifyMobile) *errs.AppError
 	RecoverEmail(email string) *errs.AppError
 	ResetPassword(evpw, url_email, email, newpw, confirmpw string) *errs.AppError
-	SaveNode(vm domain.VmAll) (*domain.Organization, *errs.AppError)
+	SaveNode(vm domain.VmAll) (*domain.VirtualMachine, *errs.AppError)
 	FindIfNodeExists(resgrp, vmname string) (bool, *errs.AppError)
 	SendMobileVerificationCode(mobile string) *errs.AppError
 }
@@ -42,80 +42,7 @@ func (d AuthRepositoryDb) FindIfNodeExists(resgrp, vmname string) (bool, *errs.A
 		return true, nil
 	}
 }
-func (d AuthRepositoryDb) SaveNode(vm domain.VmAll) (*domain.Organization, *errs.AppError) {
-	vmLoginCred := domain.VmLogin{
-		VmName:     vm.VmName,
-		VmUserName: vm.VmUserName,
-		VmPassword: vm.VmPassword,
-		IpAdd:      vm.IpAdd,
-	}
-	resGrp := domain.ResourceGroup{
-		Name:   vm.ResGrpName,
-		Region: vm.Region,
-		LoginDet: []domain.VmLogin{
-			vmLoginCred,
-		},
-	}
-	org := domain.Organization{
-		OrgName:       vm.OrgName,
-		ResourceGroup: []domain.ResourceGroup{resGrp},
-	}
-	loc := domain.Location{
-		Region: vm.Region,
-	}
-	var resLoc domain.Location
 
-	col := d.client.C("organizations")
-	col2 := d.client.C("resourcegroup_locations")
-	var res domain.Organization
-
-	err0 := col2.Find(bson.M{"region": loc.Region}).One(&resLoc)
-	if err0 == mgo.ErrNotFound {
-		err0 = col2.Insert(&loc)
-		if err0 != nil {
-			logger.Error("error while inserting new resourcegroup location" + err0.Error())
-			return nil, errs.NewUnexpectedError("unexpected DB error")
-		}
-	}
-
-	err := col.Find(bson.M{"org_name": vm.OrgName}).One(&res)
-	if err == mgo.ErrNotFound {
-		err = col.Insert(&org)
-		if err != nil {
-			logger.Error("error while inserting new resource group" + err.Error())
-			return nil, errs.NewUnexpectedError("unexpected DB error")
-		}
-		err = col2.Insert(&loc)
-		if err != nil {
-			logger.Error("error while inserting new region" + err.Error())
-			return nil, errs.NewUnexpectedError("unexpected DB error")
-		}
-	} else {
-		err = col.Find(bson.M{"org_name": vm.OrgName, "resourcegroup.resourcegroup_name": resGrp.Name}).One(&res)
-		if err == mgo.ErrNotFound {
-			pushQuery := bson.M{"resourcegroup": resGrp}
-			err1 := col.Update(bson.M{"org_name": vm.OrgName}, bson.M{"$addToSet": pushQuery})
-			if err1 != nil {
-				logger.Error("error while updating resource group array" + err1.Error())
-				return nil, errs.NewUnexpectedError("unexpected DB error")
-			}
-
-		} else {
-			pushQuery := bson.M{"resourcegroup.$.virtual_machine": vmLoginCred}
-			err1 := col.Update(bson.M{"org_name": vm.OrgName, "resourcegroup.resourcegroup_name": resGrp.Name}, bson.M{"$addToSet": pushQuery})
-			if err1 != nil {
-				logger.Error("error while updating resource group" + err1.Error())
-				return nil, errs.NewUnexpectedError("unexpected DB error")
-			}
-		}
-	}
-	err = col.Find(bson.M{"org_name": vm.OrgName}).One(&res)
-	if err != nil {
-		logger.Error("error while fetching organization" + err.Error())
-		return nil, errs.NewUnexpectedError("unexpected DB error")
-	}
-	return &res, nil
-}
 func (d AuthRepositoryDb) ResetPassword(evpw, url_email, email, newpw, confirmpw string) *errs.AppError {
 	email_verf_store := d.client.C("verification_code")
 

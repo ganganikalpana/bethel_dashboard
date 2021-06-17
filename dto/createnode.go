@@ -18,7 +18,7 @@ type NewNodesResponse struct {
 
 func ToDto(org *domain.Organization) *NewNodesResponse {
 	nodeResponse := NewNodesResponse{
-		ResGroup: org.ResourceGroup,
+		// ResGroup: org.ResourceGroup,
 	}
 	return &nodeResponse
 }

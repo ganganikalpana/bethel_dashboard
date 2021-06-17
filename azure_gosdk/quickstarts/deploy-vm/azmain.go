@@ -16,7 +16,6 @@ import (
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/Azure/go-autorest/autorest/azure/auth"
 	"github.com/Azure/go-autorest/autorest/to"
-	"github.com/davecgh/go-spew/spew"
 	"github.com/niluwats/bethel_dashboard/domain"
 	"github.com/niluwats/bethel_dashboard/dto"
 )
@@ -201,7 +200,7 @@ func getLogin(v *Value, mc *mapCounter) {
 		IpAdd:      *ipAddress.IPAddress,
 		VmUserName: vmUser["value"].(string),
 	}
-	spew.Dump(VmDetails)
+
 }
 
 func readJSON(path string) (*map[string]interface{}, error) {
